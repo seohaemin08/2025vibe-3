@@ -12,7 +12,7 @@ if uploaded_file:
     except:
         df = pd.read_csv(uploaded_file, encoding='utf-8')
 
-    # 필터링
+    # 중위 추계 필터
     filtered = df[df['가정별'].str.contains("중위 추계")]
     targets = [
         '생산연령인구(천명): 계(15~64세)',
@@ -22,15 +22,29 @@ if uploaded_file:
     ]
     filtered = filtered[filtered['인구종류별'].isin(targets)]
 
-    # 연도별 컬럼
+    # 연도별 컬럼 추출
     year_cols = [col for col in filtered.columns if col.isdigit()]
     years = list(map(int, year_cols))
 
-    # 그래프
+    # Plotly 시각화
     fig = go.Figure()
     for _, row in filtered.iterrows():
         values = row[year_cols].astype(float).values
-        fig.add_trace(go.Scatter(x=years, y=values, mode='lines+markers', name=row['인구종류별']))
+        fig.add_trace(go.Scatter(
+            x=years,
+            y=values,
+            mode='lines+markers',
+            name=row['인구종류별']
+        ))
 
     fig.update_layout(
-        title=
+        title='생산연령 인구 추이 (2022~2072, 중위 추계)',
+        xaxis_title='연도',
+        yaxis_title='인구 수 (천 명)',
+        template='plotly_white'
+    )  # ← 여기 괄호 꼭 닫아줘야 해!
+
+    st.plotly_chart(fig, use_container_width=True)
+
+else:
+    st.info("CSV 파일을 업로드하면 그래프가 표시됩니다.")
