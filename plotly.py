@@ -2,56 +2,71 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
-st.set_page_config(page_title="서울시 남녀 인구 분포", layout="wide")
-st.title("👨‍👩‍👧‍👦 서울특별시 연령별 남녀 인구 분포 (2025년 6월 기준)")
+st.set_page_config(page_title="서울 인구 시각화", layout="wide")
+st.title("🧑‍🤝‍🧑 서울특별시 연령별 인구 시각화 (2025년 6월)")
 
-uploaded_file = st.file_uploader("남녀 인구 구분 CSV 파일을 업로드하세요", type="csv")
+# 파일 업로드
+col1, col2 = st.columns(2)
+with col1:
+    total_file = st.file_uploader("📂 [1] 월간 합계 파일", type="csv", key="total")
+with col2:
+    gender_file = st.file_uploader("📂 [2] 남녀 구분 파일", type="csv", key="gender")
 
-if uploaded_file is not None:
-    try:
-        df = pd.read_csv(uploaded_file, encoding="cp949")
-    except UnicodeDecodeError:
-        df = pd.read_csv(uploaded_file, encoding="utf-8")
+# 모드 선택
+mode = st.radio("⚙️ 시각화 모드 선택", ["전체 인구", "남녀 구분"], horizontal=True)
 
-    # 서울특별시 전체 데이터 필터링
+# 전처리 함수
+def get_age_and_pop(df, prefix):
     seoul = df[df['행정구역'].str.contains("서울특별시  \(1100000000\)", regex=True)]
+    cols = [col for col in df.columns if prefix in col and '세' in col]
 
-    if not seoul.empty:
-        # 컬럼 분리
-        male_cols = [col for col in df.columns if '남_' in col and '세' in col]
-        female_cols = [col for col in df.columns if '여_' in col and '세' in col]
+    def age_label(colname):
+        label = colname.split('_')[-1]
+        return 100 if '이상' in label else int(label.replace('세', ''))
 
-        def extract_age(colname):
-            part = colname.split('_')[-1]
-            return 100 if '이상' in part else int(part.replace('세', ''))
+    ages = [age_label(c) for c in cols]
 
-        ages = [extract_age(col) for col in male_cols]
+    pops = []
+    for col in cols:
+        val = seoul[col].values[0]
+        val = int(val.replace(',', '')) if isinstance(val, str) else int(val)
+        pops.append(val)
 
-        def get_population(col_list):
-            pops = []
-            for col in col_list:
-                val = seoul[col].values[0]
-                val = int(val.replace(",", "")) if isinstance(val, str) else int(val)
-                pops.append(val)
-            return pops
+    return ages, pops
 
-        male_pop = get_population(male_cols)
-        female_pop = get_population(female_cols)
+# 전체 인구 모드
+if mode == "전체 인구" and total_file:
+    df_total = pd.read_csv(total_file, encoding='cp949')
+    ages, pops = get_age_and_pop(df_total, "계_")
 
-        # 그래프
-        fig = go.Figure()
-        fig.add_trace(go.Bar(x=ages, y=male_pop, name="남성", marker_color="blue"))
-        fig.add_trace(go.Bar(x=ages, y=female_pop, name="여성", marker_color="pink"))
-        fig.update_layout(
-            barmode="group",
-            title="서울특별시 연령별 남녀 인구 비교",
-            xaxis_title="나이",
-            yaxis_title="인구 수",
-            template="plotly_white"
-        )
+    fig = go.Figure()
+    fig.add_trace(go.Bar(x=ages, y=pops, name="전체 인구"))
+    fig.update_layout(
+        title="서울특별시 연령별 전체 인구",
+        xaxis_title="나이",
+        yaxis_title="인구 수",
+        template="plotly_white"
+    )
+    st.plotly_chart(fig, use_container_width=True)
 
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.warning("서울시 전체 데이터를 찾을 수 없습니다.")
-else:
-    st.info("CSV 파일을 업로드하면 시각화가 시작됩니다.")
+# 남녀 구분 모드
+elif mode == "남녀 구분" and gender_file:
+    df_gender = pd.read_csv(gender_file, encoding='cp949')
+    ages_m, pops_m = get_age_and_pop(df_gender, "남_")
+    ages_f, pops_f = get_age_and_pop(df_gender, "여_")
+
+    fig = go.Figure()
+    fig.add_trace(go.Bar(x=ages_m, y=pops_m, name="남성", marker_color='blue'))
+    fig.add_trace(go.Bar(x=ages_f, y=pops_f, name="여성", marker_color='pink'))
+    fig.update_layout(
+        barmode="group",
+        title="서울특별시 연령별 남녀 인구 비교",
+        xaxis_title="나이",
+        yaxis_title="인구 수",
+        template="plotly_white"
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
+# 안내
+elif not total_file or not gender_file:
+    st.info("좌측에서 두 개의 CSV 파일을 업로드하고 모드를 선택하세요.")
