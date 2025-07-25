@@ -1,17 +1,40 @@
 import streamlit as st
 import random
+from PIL import Image
+import os
 
-# 제목
-st.title("✊ ✋ ✌ 가위바위보 게임")
+# 기본 설정
+st.set_page_config(page_title="가위바위보 게임", page_icon="✊")
 
-# 사용자 선택
-user_choice = st.radio("당신의 선택은?", ("가위", "바위", "보"))
+st.title("✊ ✋ ✌ 가위바위보 게임 - 이미지 버전")
+
+# 이미지 경로
+image_dir = "images"
+rps_dict = {
+    "가위": os.path.join(image_dir, "scissors.png"),
+    "바위": os.path.join(image_dir, "rock.png"),
+    "보": os.path.join(image_dir, "paper.png"),
+}
+
+# 가위바위보 버튼 (이미지로)
+col1, col2, col3 = st.columns(3)
+user_choice = None
+
+with col1:
+    if st.button("✌ 가위"):
+        user_choice = "가위"
+with col2:
+    if st.button("✊ 바위"):
+        user_choice = "바위"
+with col3:
+    if st.button("✋ 보"):
+        user_choice = "보"
 
 # 컴퓨터 선택
 choices = ["가위", "바위", "보"]
 computer_choice = random.choice(choices)
 
-# 게임 로직 함수
+# 결과 계산 함수
 def get_result(user, computer):
     if user == computer:
         return "비겼습니다!"
@@ -22,9 +45,14 @@ def get_result(user, computer):
     else:
         return "당신이 졌습니다... 😢"
 
-# 버튼 누르면 결과 출력
-if st.button("결과 보기"):
-    st.write(f"컴퓨터의 선택: **{computer_choice}**")
-    result = get_result(user_choice, computer_choice)
-    st.subheader(result)
+# 결과 출력
+if user_choice:
+    st.subheader("당신의 선택")
+    st.image(rps_dict[user_choice], width=150)
 
+    st.subheader("컴퓨터의 선택")
+    st.image(rps_dict[computer_choice], width=150)
+
+    st.subheader("게임 결과")
+    result = get_result(user_choice, computer_choice)
+    st.success(result)
