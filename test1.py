@@ -1,38 +1,37 @@
 import streamlit as st
 import random
-from PIL import Image
-import os
 
-# 기본 설정
+# 페이지 설정
 st.set_page_config(page_title="가위바위보 게임", page_icon="✊")
 
-st.title("✊ ✋ ✌ 가위바위보 게임 - 이미지 버전")
+st.title("✊ ✋ ✌ 가위바위보 게임")
 
-# 이미지 경로
-image_dir = "images"
-rps_dict = {
-    "가위": os.path.join(image_dir, "scissors.png"),
-    "바위": os.path.join(image_dir, "rock.png"),
-    "보": os.path.join(image_dir, "paper.png"),
-}
+# 세션 상태에 점수 저장
+if "user_score" not in st.session_state:
+    st.session_state.user_score = 0
+if "computer_score" not in st.session_state:
+    st.session_state.computer_score = 0
+if "rounds" not in st.session_state:
+    st.session_state.rounds = 0
 
-# 가위바위보 버튼 (이미지로)
-col1, col2, col3 = st.columns(3)
+# 선택 버튼
+st.subheader("무엇을 낼까요?")
+cols = st.columns(3)
 user_choice = None
 
-with col1:
+with cols[0]:
     if st.button("✌ 가위"):
         user_choice = "가위"
-with col2:
+with cols[1]:
     if st.button("✊ 바위"):
         user_choice = "바위"
-with col3:
+with cols[2]:
     if st.button("✋ 보"):
         user_choice = "보"
 
 # 컴퓨터 선택
-choices = ["가위", "바위", "보"]
-computer_choice = random.choice(choices)
+rps_list = ["가위", "바위", "보"]
+computer_choice = random.choice(rps_list)
 
 # 결과 계산 함수
 def get_result(user, computer):
@@ -41,18 +40,42 @@ def get_result(user, computer):
     elif (user == "가위" and computer == "보") or \
          (user == "바위" and computer == "가위") or \
          (user == "보" and computer == "바위"):
-        return "당신이 이겼습니다! 🎉"
+        return "🎉 당신이 이겼습니다!"
     else:
-        return "당신이 졌습니다... 😢"
+        return "😢 당신이 졌습니다..."
 
-# 결과 출력
+# 결과 처리
 if user_choice:
-    st.subheader("당신의 선택")
-    st.image(rps_dict[user_choice], width=150)
+    st.markdown("---")
+    st.subheader("결과")
+    st.write(f"**당신:** {user_choice}")
+    st.write(f"**컴퓨터:** {computer_choice}")
 
-    st.subheader("컴퓨터의 선택")
-    st.image(rps_dict[computer_choice], width=150)
-
-    st.subheader("게임 결과")
     result = get_result(user_choice, computer_choice)
     st.success(result)
+
+    # 점수 반영
+    if "이겼습니다" in result:
+        st.session_state.user_score += 1
+    elif "졌습니다" in result:
+        st.session_state.computer_score += 1
+
+    st.session_state.rounds += 1
+
+    # 점수판 출력
+    st.markdown("---")
+    st.subheader("📊 점수판")
+    col_score1, col_score2 = st.columns(2)
+    with col_score1:
+        st.metric(label="당신의 점수", value=st.session_state.user_score)
+    with col_score2:
+        st.metric(label="컴퓨터 점수", value=st.session_state.computer_score)
+
+    st.write(f"총 라운드 수: **{st.session_state.rounds}**")
+
+# 초기화 버튼
+if st.button("🔄 점수 초기화"):
+    st.session_state.user_score = 0
+    st.session_state.computer_score = 0
+    st.session_state.rounds = 0
+    st.success("점수가 초기화되었습니다.")
