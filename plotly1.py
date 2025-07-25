@@ -2,9 +2,9 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
-st.title("📈 생산연령 인구 추이 시각화 (2022 ~ 2072)")
+st.title("🌈 무지개 색 생산연령 인구 추이")
 
-uploaded_file = st.file_uploader("CSV 파일 업로드 (예: 주요 연령계층별 추계인구)", type="csv")
+uploaded_file = st.file_uploader("CSV 파일 업로드 (주요 연령계층별 추계인구)", type="csv")
 
 if uploaded_file:
     try:
@@ -20,31 +20,40 @@ if uploaded_file:
         '생산연령인구(천명): 25-49세',
         '생산연령인구(천명): 50-64세'
     ]
-    filtered = filtered[filtered['인구종류별'].isin(targets)]
+    
+    # 무지개 색 매핑
+    rainbow_colors = {
+        '생산연령인구(천명): 계(15~64세)': 'red',
+        '생산연령인구(천명): 15-24세': 'orange',
+        '생산연령인구(천명): 25-49세': 'green',
+        '생산연령인구(천명): 50-64세': 'blue'
+    }
 
-    # 연도별 컬럼 추출
+    filtered = filtered[filtered['인구종류별'].isin(targets)]
     year_cols = [col for col in filtered.columns if col.isdigit()]
     years = list(map(int, year_cols))
 
-    # Plotly 시각화
+    # 시각화
     fig = go.Figure()
     for _, row in filtered.iterrows():
+        group = row['인구종류별']
         values = row[year_cols].astype(float).values
         fig.add_trace(go.Scatter(
             x=years,
             y=values,
             mode='lines+markers',
-            name=row['인구종류별']
+            name=group,
+            marker_color=rainbow_colors.get(group, 'gray')
         ))
 
     fig.update_layout(
-        title='생산연령 인구 추이 (2022~2072, 중위 추계)',
+        title='🌈 생산연령 인구 추이 (무지개 색)',
         xaxis_title='연도',
         yaxis_title='인구 수 (천 명)',
         template='plotly_white'
-    )  # ← 여기 괄호 꼭 닫아줘야 해!
+    )
 
     st.plotly_chart(fig, use_container_width=True)
 
 else:
-    st.info("CSV 파일을 업로드하면 그래프가 표시됩니다.")
+    st.info("📁 CSV 파일을 업로드하면 무지개 그래프가 표시됩니다.")
