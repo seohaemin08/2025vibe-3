@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 
-st.title("🌈 무지개 색 생산연령 인구 추이")
+st.title("🌈주요 연령계층별 추계인구")
 
 uploaded_file = st.file_uploader("CSV 파일 업로드 (주요 연령계층별 추계인구)", type="csv")
 
